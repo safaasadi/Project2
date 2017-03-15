@@ -1,0 +1,45 @@
+#include <cstdlib>
+#include <fcntl.h>
+const char * menuch ("Open","Save","Save As", "Exit");
+int choicenum = 4;
+void createMenu();
+void printMenu();
+int highlight = 0;
+int ch;
+int x,y = 0;
+int main(int argc, const char * argv[]){
+  initscr();
+  int fd;
+  WINDOW *outwin;
+  WINDOW *inner;
+
+
+}
+void createMenu(){
+  keypad(stdscr, TRUE);
+  ch = getch();
+  switch(ch){
+  case KEY_DOWN:
+    break;
+  case KEY_UP:
+    break;
+  case KEY_LEFT:
+    break;
+  case KEY_RIGHT:
+    break;
+  }
+}
+void printMenu(WIDOW* menu, int highlight ){
+  box(menu, 0, 0);
+  for(int i=0; i<= choicenum; i++){
+    if(highlighter== i){
+      printw("");
+    wattron(menu, A_REVERSE);
+    mvmprintw("");
+    wattron(menu, A_REVERSE);
+    else{
+      mvmprintw(menu, y, x, menuch[i]);
+    }
+    y++;
+  }
+}
