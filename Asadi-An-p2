@@ -1,45 +1,208 @@
 #include <cstdlib>
 #include <fcntl.h>
-const char * menuch ("Open","Save","Save As", "Exit");
-int choicenum = 4;
+#include <curses.h>#include <stdlib.h>
+#include <vector>
+#include <ncurses.h>
+#include <iostream>
+#include <unistd.h>
+#define ENTER 10
+#define ESCAPE 27
+
+  using namespace std;
+
+  WINDOW **printMenu(int start_col);
+  void deleteMenu(WINDOW ** items, int count) ;
+  //int scrollMenu(WINDOW **items, int count, int menuStart);                                                \
+                                                                                                              
 void createMenu();
 void printMenu();
-int highlight = 0;
-int ch;
-int x,y = 0;
-int main(int argc, const char * argv[]){
-  initscr();
-  int fd;
-  WINDOW *outwin;
-  WINDOW *inner;
-
-
-}
-void createMenu(){
-  keypad(stdscr, TRUE);
-  ch = getch();
-  switch(ch){
-  case KEY_DOWN:
-    break;
-  case KEY_UP:
-    break;
-  case KEY_LEFT:
-    break;
-  case KEY_RIGHT:
-    break;
-  }
-}
-void printMenu(WIDOW* menu, int highlight ){
-  box(menu, 0, 0);
-  for(int i=0; i<= choicenum; i++){
-    if(highlighter== i){
-      printw("");
-    wattron(menu, A_REVERSE);
-    mvmprintw("");
-    wattron(menu, A_REVERSE);
-    else{
-      mvmprintw(menu, y, x, menuch[i]);
+int openFile(const char *, int);
+void readFile(int);
+void saveFile();
+bool checkExists(const char *);
+vector <string> myfile;
+char output[1];
+bool result;
+  int ch;
+  int x,y = 0;
+int fd;
+  int main(int argc, const char * argv[]){
+    if(argc ==2){
+      result = checkExists(argv[1]);
+      if(result ==true){
+        fd =openFile(argv[1],O_RDWR);
+        if(fd==-1){
+          exit(0);//reprompt                                                                                  
+        }
+        readFile(fd);
+        getch();
+      }
+      else{
+        exit(0);//prompt again                                                                                
+      }
     }
-    y++;
+    else{
+      exit(0);//ask TA / Mike about what to do when lauched like ./1730ed i.e. w/o any parametrs              
+    }
+    int key;
+    int highlight=0;
+    WINDOW *outwin, *inner,*content, *border, *error;
+    ITEM **items;
+    MENU *menus;
+    content = createWin(LINES-5, COLS-4,3,3);
+    wrefresh(content);
+
+initscr();
+    curs_set(0);
+    noecho();
+    keypad(stdscr, TRUE);
+    outwin=subwin(stdscr,1,80,0,0);
+    inner=subwin(stdscr,1,79,23,1);
+    wmove(outwin,0,20);
+    wbkgd(outwin, COLOR_PAIR(2));
+    waddstr(outwin, "Text Editor");
+    wattron(outwin, COLOR_PAIR(3));
+    move(2,1);
+    printw("Press F1 to open the menus");
+    printw("press ESC to quit");
+    refresh();
+
+    do {
+      int selectedItems,choice;
+      WINDOW **menuItems;
+      key=getch();
+      werase(inner);
+      wrefresh(inner);
+      if (key==KEY_F(1)) {
+      menuItems=printMenu(0);
+        while(1) {
+          for (int i=0;i<4;i++){
+            if (i == highlight)
+              wattron(inner, A_REVERSE);
+            // mvwprintw(inner, i+1 , 1, menuItems[i]);                                                      \
+                                                                                                              
+            wattroff(inner, A_REVERSE);
+          }
+        }
+        switch(choice){
+        case KEY_UP:
+          highlight--;
+          if(highlight == -1)
+            highlight = 0;
+          break;
+        case KEY_DOWN:
+          highlight++;
+          if(highlight == 4)
+            highlight = 3;
+          break;
+        default:
+          break;
+          if(choice == ENTER)
+break;
+        }//switch                                                                                            \
+                                                                                                              
+      }
+      if (selectedItems<0)
+        wprintw(inner, "You have not selected any items");
+      else if (selectedItems==1)
+        wprintw(inner, "Open file");
+      else if (selectedItems==2)
+        wprintw(inner, "Save file");
+      else if (selectedItems==3)
+        wprintw(inner, "Save as file");
+      else if (selectedItems==4)
+        wprintw(inner, "Close file");
+      touchwin(stdscr);
+      refresh();
+
+    }
+    while (key!=ESCAPE);
+    delwin(outwin);
+    delwin(inner);
+    endwin();
+    return 0;
+  }
+
+  WINDOW **printMenu(int start){
+    WINDOW **items;
+    items=(WINDOW**)malloc(6*sizeof(WINDOW*));
+    items[0]=newwin(10,19,1,start);
+    wbkgd(items[0],COLOR_PAIR(2));
+    box(items[0],ACS_VLINE,ACS_HLINE);
+    items[1]=subwin(items[0],1,17,2,start+1);
+    wprintw(items[1], "Open",1);
+    items[2]=subwin(items[0],1,17,3,start+1);
+    wprintw(items[2], "Save",2);
+    items[3]=subwin(items[0],1,17,4,start+1);
+    wprintw(items[3],"Save As",3);
+    items[4]=subwin(items[0],1,17,5,start+1);
+    wprintw(items[4],"Close",4);
+    wbkgd(items[1],COLOR_PAIR(1));
+    wrefresh(items[0]);
+    return items;
+  }
+  int openFile(const char * filename,int flag){
+    int fd = open(filename, flag);
+    if(fd == -1){
+      perror("file can not open");
+
+    }
+    return fd;
+  }
+void saveFile(const char* filename){
+    int fd = openFile(filename, O_RDWR);
+    string temp;
+    int n;
+    while ((n = read(fd, output, 1)) > 0){
+      if(output[0] =='\n'){
+        myfile.push_back(temp);
+        temp = "";
+      }
+      else{
+        temp = temp+ output[0];
+      }
+    }
+  }
+void readFile(int fd){
+  // int fd = openFile(filename, O_RDWR);                                                                     
+    string temp;
+    int n;
+    while ((n = read(fd, output, 1)) > 0){
+      if(output[0] =='\n'){
+        //      cout<<temp<<endl;                                                                             
+        myfile.push_back(temp);
+        temp = "";
+      }
+      else{
+        temp = temp+ output[0];
+      }
+    }
+  }
+WINDOW * createWin(int height, int width, int starty, int startx){
+  WINDOW *local;
+  local = newwin(height, width, starty, startx);
+  return local;
+}
+bool checkExists(const char * filename){
+  int fd=open(filename, O_RDWR);
+  int closed;
+  if( fd== -1){
+    printw("file does not exist");
+    refresh();
+    getch();
+    endwin();
+    closed = close(fd);
+    return false;
+  }
+  else{
+    closed = close(fd);
+    return true;
   }
 }
+
+  void deleteMenu(WINDOW ** items, int count) {
+    for (int i=0;i<count;i++) {
+      delwin(items[i]);
+    }
+    free(items);
+    }
